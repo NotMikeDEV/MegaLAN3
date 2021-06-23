@@ -4,6 +4,8 @@ import "fmt"
 import "net"
 import "strings"
 import "strconv"
+import "time"
+import "bufio"
 import "encoding/binary"
 import "github.com/vishvananda/netlink"
 
@@ -12,6 +14,7 @@ func main() {
 	RoutingTable := -1
 	UDPPort := 206
 	InterfaceName := ""
+	SaveFile := ""
 	var InterfaceAddresses []*netlink.Addr
 	for i, s := range os.Args[1:] {
 		parts := strings.SplitN(s, "=", 2)
@@ -29,6 +32,8 @@ func main() {
 			UDPPort = Port
 		} else if (parts[0] == "NIC") {
 			InterfaceName = parts[1]
+		} else if (parts[0] == "FILE") {
+			SaveFile = parts[1]
 		} else if (parts[0] == "IP") {
 			Addr, err := netlink.ParseAddr(parts[1])
 			if (err!=nil) {
@@ -74,6 +79,23 @@ func main() {
 	if (RoutingTable > -1) {
 		MegaLAN.RoutingTable = RoutingTable
 		AttachRouteMonitor(byte(RoutingTable), &MegaLAN)
+	}
+	if (SaveFile != "") {
+		MegaLAN.SaveFile = SaveFile
+		MegaLAN.SaveFileTime = time.Now()
+		file, err := os.Open(SaveFile)
+		if (err == nil) {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				Line := scanner.Text()
+				Parts := strings.Split(Line, " ")
+				if (Parts[0] == "Peer") {
+					p, _ := strconv.Atoi(Parts[2])
+					MegaLAN.AddPeer(&net.UDPAddr{Port: p, IP: net.ParseIP(Parts[1])})
+				}
+    		}
+		}
 	}
 	go MegaLAN.PollThread()
 	for {

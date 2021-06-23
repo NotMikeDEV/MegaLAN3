@@ -3,6 +3,7 @@ package main
 import "time"
 import "strconv"
 import "net"
+import "os"
 import "bytes"
 import "github.com/vishvananda/netlink"
 import "math/rand"
@@ -18,6 +19,8 @@ type MegaLANClass struct {
 	KnownRoutes map[string]*netlink.Route
 	Channel chan MegaLANMessage
 	RoutingTable int
+	SaveFile string
+	SaveFileTime time.Time
 }
 
 // MegaLANMessage holds a message for the event queue
@@ -55,6 +58,32 @@ func (MegaLAN *MegaLANClass) Poll() {
 	for i := range MegaLAN.EthernetPeers {
 		if (!MegaLAN.EthernetPeers[i].UP) {
 			delete(MegaLAN.EthernetPeers, i)
+		}
+	}
+	if (MegaLAN.SaveFile != "" && time.Now().Unix() - MegaLAN.SaveFileTime.Unix() > 60) {
+		Debug(1, "Saving cache", MegaLAN.SaveFile)
+		MegaLAN.SaveFileTime = time.Now()
+		f, err := os.Create(MegaLAN.SaveFile)
+		if (err == nil) {
+			for x := range MegaLAN.Peers {
+				if (!MegaLAN.Peers[x].UP) {
+					f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + "\n")
+				} else {
+					f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + " UP\n")
+					if (MegaLAN.Peers[x].Router) {
+						f.WriteString(" MAC " + MegaLAN.Peers[x].MAC.String() + "\n")
+						f.WriteString(" IPv6 " + MegaLAN.Peers[x].RemoteIPv6.String() + "\n")
+						for y := range MegaLAN.Peers[x].RemoteRoutes {
+							f.WriteString(" Route " + y + "\n")
+						}
+					}
+				}
+			}
+			for x := range MegaLAN.EthernetPeers {
+				P := MegaLAN.EthernetPeers[x]
+				f.WriteString("Ethernet " + x + " " + P.Address.IP.String() + "/" + strconv.Itoa(P.Address.Port) + "\n")
+			}
+			f.Close()
 		}
 	}
 }
