@@ -15,6 +15,7 @@ func main() {
 	UDPPort := 206
 	InterfaceName := ""
 	SaveFile := ""
+	Password := ""
 	var InterfaceAddresses []*netlink.Addr
 	for i, s := range os.Args[1:] {
 		parts := strings.SplitN(s, "=", 2)
@@ -34,6 +35,8 @@ func main() {
 			InterfaceName = parts[1]
 		} else if (parts[0] == "FILE") {
 			SaveFile = parts[1]
+		} else if (parts[0] == "PASSWORD") {
+			Password = parts[1]
 		} else if (parts[0] == "IP") {
 			Addr, err := netlink.ParseAddr(parts[1])
 			if (err!=nil) {
@@ -75,7 +78,7 @@ func main() {
 	for i := range InterfaceAddresses {
 		MegaLAN.NIC.AddIP(InterfaceAddresses[i])
 	}
-	MegaLAN.UDP = AttachUDPSocket(UDPPort, &MegaLAN)
+	MegaLAN.UDP = AttachUDPSocket(UDPPort, Password, &MegaLAN)
 	if (RoutingTable > -1) {
 		MegaLAN.RoutingTable = RoutingTable
 		AttachRouteMonitor(byte(RoutingTable), &MegaLAN)

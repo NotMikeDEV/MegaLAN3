@@ -21,7 +21,7 @@ func (t *TunTapClass) Reader() {
 		buf := make([]byte, 1536)
 		pkt, err := t.FD.ReadPacket(buf)
 		if err != nil {
-			Error("Read error:", err)
+			Debug(0, "Read Error", err)
 		} else {
 			Msg := MegaLANMessage{Type: 1, Payload: pkt.Body}
 			t.MegaLAN.Channel <- Msg
