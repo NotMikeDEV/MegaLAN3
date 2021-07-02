@@ -67,12 +67,19 @@ func (MegaLAN *MegaLANClass) Poll() {
 		if (err == nil) {
 			for x := range MegaLAN.Peers {
 				if (!MegaLAN.Peers[x].UP) {
-					f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + "\n")
+					if (MegaLAN.Peers[x].Static) {
+						f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + " STATIC\n")
+					} else {
+						f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + "\n")
+					}
+					f.WriteString(" LastRecv " + strconv.Itoa(int(time.Now().Unix() - MegaLAN.Peers[x].LastRecv)) + "\n")
 				} else {
 					f.WriteString("Peer " + MegaLAN.Peers[x].Address.IP.String() + " " + strconv.Itoa(MegaLAN.Peers[x].Address.Port) + " UP\n")
+					f.WriteString(" LastRecv " + strconv.Itoa(int(time.Now().Unix() - MegaLAN.Peers[x].LastRecv)) + "\n")
 					if (MegaLAN.Peers[x].Router) {
 						f.WriteString(" MAC " + MegaLAN.Peers[x].MAC.String() + "\n")
 						f.WriteString(" IPv6 " + MegaLAN.Peers[x].RemoteIPv6.String() + "\n")
+						f.WriteString(" IPv4 " + MegaLAN.Peers[x].RemoteIPv4.String() + "\n")
 						for y := range MegaLAN.Peers[x].RemoteRoutes {
 							f.WriteString(" Route " + y + "\n")
 						}
