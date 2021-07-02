@@ -242,6 +242,7 @@ func (MegaLAN *MegaLANClass) AddPeer(remote *net.UDPAddr) *Peer {
 	var P = &Peer{Address: remote, MegaLAN: MegaLAN}
 	Debug(1, "Add Peer", PeerAddr)
 	MegaLAN.Peers[PeerAddr] = P
+	P.LastRecv = time.Now().Unix()
 	return P
 }
 // GetPeer Get a remote peer object
