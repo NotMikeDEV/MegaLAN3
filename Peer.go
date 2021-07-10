@@ -93,8 +93,10 @@ func (P *Peer) Poll () {
 }
 // Close Called when peer is garbage collected
 func (P *Peer) Close () {
+	Debug(2, "Close Peer", P.Address)
 	P.ClearRoutes()
 	if (P.RemoteIPv4 != nil) {
+		Debug(2, "Delete Peer Route via", P.RemoteIPv4)
 		var IPv4Route netlink.Route
 		IPv4Route.Dst = &net.IPNet{IP: P.RemoteIPv4, Mask: net.CIDRMask(32,32)}
 		IPv4Route.Scope = netlink.SCOPE_LINK
@@ -112,6 +114,7 @@ func (P *Peer) Close () {
 // ClearRoutes Uninstall all routes
 func (P *Peer) ClearRoutes () {
 	if (P.RemoteRoutes != nil) {
+		Debug(2, "Clear Peer Routes via", P.RemoteIPv4)
 		for x := range P.RemoteRoutes {
 			netlink.RouteDel(P.RemoteRoutes[x].InstalledRoute)
 			Debug(2, "DelRoute", P.RemoteRoutes[x])
@@ -225,6 +228,7 @@ func (P *Peer) RoutingUpdate (Packet []byte) {
 	}
 	Type := Packet[0]
 	if (Type == 0) { // Init/Reset
+		P.ClearRoutes()
 		P.RemoteRoutes = make(map[string]*InstalledRoute)
 		for P.RemoteIPv4 == nil {
 			var IPv4 net.IP = net.ParseIP("100.127.0.0")
