@@ -22,19 +22,15 @@ func (m *NetlinkRoutes) Reader() {
 			for x := range Routes4 { if (Routes4[x].Dst != nil) {
 				Label := Routes4[x].Dst.String() + "." + strconv.Itoa(Routes4[x].Priority)
 				ThisTime[Label] = true
-				_, ok := m.KnownRoutes[Label]
-				if (!ok) {
+				_, known := m.KnownRoutes[Label]
+				if (!known) {
 					m.KnownRoutes[Label] = &Routes4[x]
-					Msg := MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]}
-					m.MegaLAN.Channel <- Msg
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]} // Add
 				}
 				if (bytes.Compare(m.KnownRoutes[Label].Gw, Routes4[x].Gw) != 0 || m.KnownRoutes[Label].LinkIndex != Routes4[x].LinkIndex) {
-					Msg := MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]}
-					m.MegaLAN.Channel <- Msg
-					Msg.Type = 0x10
-					Msg.Route = &Routes4[x]
-					m.MegaLAN.Channel <- Msg
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]} // Remove
 					m.KnownRoutes[Label] = &Routes4[x]
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]} // Add
 				}
 			}}
 			for x := range Routes6 { if (Routes6[x].Dst != nil) {
@@ -43,23 +39,18 @@ func (m *NetlinkRoutes) Reader() {
 				_, ok := m.KnownRoutes[Label]
 				if (!ok) {
 					m.KnownRoutes[Label] = &Routes6[x]
-					Msg := MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]}
-					m.MegaLAN.Channel <- Msg
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]} // Add
 				}
 				if (bytes.Compare(m.KnownRoutes[Label].Gw, Routes6[x].Gw) != 0 || m.KnownRoutes[Label].LinkIndex != Routes6[x].LinkIndex) {
-					Msg := MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]}
-					m.MegaLAN.Channel <- Msg
-					Msg.Type = 0x10
-					Msg.Route = &Routes6[x]
-					m.MegaLAN.Channel <- Msg
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]} // Remove
 					m.KnownRoutes[Label] = &Routes6[x]
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x10, Route: m.KnownRoutes[Label]} // Add
 				}
 			}}
 			for Label := range m.KnownRoutes {
 				_, ok := ThisTime[Label]
 				if (!ok) {
-					Msg := MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]}
-					m.MegaLAN.Channel <- Msg
+					m.MegaLAN.Channel <- MegaLANMessage{Type: 0x11, Route: m.KnownRoutes[Label]} // Remove
 					delete(m.KnownRoutes, Label)
 				}
 			}
