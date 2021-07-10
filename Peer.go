@@ -59,8 +59,7 @@ func (P *Peer) Poll () {
 			P.HandshakeSendTime = time.Now()
 		}
 		if (time.Now().Unix() - P.LastRecv > 45) {
-			P.UP = false
-			P.MegaLAN.SendUDP(P, 0xFE, []byte{})
+			P.Close()
 			if (!P.Static) {
 				for i := range MegaLAN.Peers {
 					if (P.MegaLAN.Peers[i].UP) {
@@ -98,6 +97,7 @@ func (P *Peer) Close () {
 	if (P.RemoteIPv4 != nil) {
 		var IPv4Route netlink.Route
 		IPv4Route.Dst = &net.IPNet{IP: P.RemoteIPv4, Mask: net.CIDRMask(32,32)}
+		IPv4Route.Scope = netlink.SCOPE_LINK
 		IPv4Route.LinkIndex = P.MegaLAN.NIC.Link.Attrs().Index
 		IPv4Route.Protocol = 33
 		IPv4Route.Table = P.MegaLAN.RoutingTable
@@ -111,12 +111,14 @@ func (P *Peer) Close () {
 }
 // ClearRoutes Uninstall all routes
 func (P *Peer) ClearRoutes () {
-	for x := range P.RemoteRoutes {
-		netlink.RouteDel(P.RemoteRoutes[x].InstalledRoute)
-		Debug(2, "DelRoute", P.RemoteRoutes[x])
-		delete(P.RemoteRoutes, x)
+	if (P.RemoteRoutes != nil) {
+		for x := range P.RemoteRoutes {
+			netlink.RouteDel(P.RemoteRoutes[x].InstalledRoute)
+			Debug(2, "DelRoute", P.RemoteRoutes[x])
+			delete(P.RemoteRoutes, x)
+		}
+		P.RemoteRoutes = nil
 	}
-	P.RemoteRoutes = nil
 }
 
 // AddLocalRoute send route to remote peer

@@ -209,7 +209,7 @@ func (MegaLAN *MegaLANClass) ReadUDP(remote *net.UDPAddr, Buffer []byte) {
 	} else if (Type == 0xA1 && MegaLAN.RoutingTable != -1) {
 		Peer.RoutingACK(Payload)
 	} else if (Type == 0xFE) {
-		Peer.UP = false
+		Peer.Close()
 	} else if (Type == 0xFF) {
 		var DestinationMAC net.HardwareAddr = Payload[0:6]
 		var SourceMAC net.HardwareAddr = Payload[6:12]
